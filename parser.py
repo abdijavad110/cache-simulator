@@ -1,4 +1,5 @@
 from simulator import conf
+from time import sleep, time
 
 
 class Parser:
@@ -8,10 +9,15 @@ class Parser:
         trace = [e for e in trace if len(e) == conf['indicesCnt']]
 
         self.requests = list(map(
-            lambda q: [q[conf['timeInd']], q[conf['RWInd']], q[conf['addrInd']], q[conf['sizeInd']]],
+            lambda q: [int(q[conf['timeInd']])*conf['delayFactor'], q[conf['RWInd']], q[conf['addrInd']], q[conf['sizeInd']]],
             trace))
         self.cnt = len(self.requests)
         self.currentRequest = 0
 
-    def start_sending_requests(self, destination):
-        pass
+    def start_sending_requests(self, dest):
+        start = time()
+        for req in self.requests:
+            now = time() - start
+            while now < req[0]*conf['timeFactor']:
+                sleep(10/1000000)
+            dest(req[2], req[3])

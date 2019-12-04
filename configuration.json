@@ -7,5 +7,6 @@
   "sizeInd": 4,
   "blkSize": 4096,
   "maxAddr": 10000000,
-  "cacheSize": 1024
+  "cacheSize": 1024,
+  "timeFactor": 10
 }
