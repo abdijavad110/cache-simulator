@@ -4,5 +4,8 @@
   "timeInd": 0,
   "RWInd": 2,
   "addrInd": 3,
-  "sizeInd": 4
+  "sizeInd": 4,
+  "blkSize": 4096,
+  "maxAddr": 10000000,
+  "cacheSize": 1024
 }
