@@ -1,12 +1,8 @@
-from json import loads as jsn_ld
 from time import sleep
 from storage.manager import Manager
 from parser import Parser
 import threading
 
-
-jsn_file = open("configuration.json", 'r').read()
-conf = jsn_ld(jsn_file)
 
 # fixme shouldn't be in manager?
 req_Q = []
@@ -42,4 +38,12 @@ if __name__ == "__main__":
     stg_trd.start()
     # monitoring:
     while parse_trd.is_alive():
-        pass
+        print("trace:\t", parser.currentRequest, "/", parser.cnt)
+        print("requests len:\t", len(req_Q))
+        print(
+            "cache:: hits:", manager.cache.hit_cnt,
+            ", misses:", manager.cache.miss_cnt,
+            ", evicts:", manager.cache.evict_cnt,
+            ", hit ratio:", manager.cache.hit_cnt/(manager.cache.hit_cnt+manager.cache.hit_cnt)
+            )
+        sleep(1)

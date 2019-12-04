@@ -1,5 +1,5 @@
 import threading
-from simulator import conf
+from conf import conf
 
 
 class CacheElem:

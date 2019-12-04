@@ -8,5 +8,5 @@
   "blkSize": 4096,
   "maxAddr": 10000000,
   "cacheSize": 1024,
-  "timeFactor": 10
+  "delayFactor": 10
 }
