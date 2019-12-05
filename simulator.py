@@ -19,9 +19,12 @@ def new_request(addr, length):
 
 def poll_q():
     while True:
-        if len(req_Q) == 0:
+        while len(req_Q) == 0:
             sleep(5/1000000)
-        manager.issue_request(req_Q[0], req_Q[1])
+        Q_lock.acquire()
+        manager.issue_request(req_Q[0][0], req_Q[0][1])
+        req_Q.pop(0)
+        Q_lock.release()
 
 
 if __name__ == "__main__":
@@ -40,10 +43,9 @@ if __name__ == "__main__":
     while parse_trd.is_alive():
         print("trace:\t", parser.currentRequest, "/", parser.cnt)
         print("requests len:\t", len(req_Q))
-        print(
-            "cache:: hits:", manager.cache.hit_cnt,
-            ", misses:", manager.cache.miss_cnt,
-            ", evicts:", manager.cache.evict_cnt,
-            ", hit ratio:", manager.cache.hit_cnt/(manager.cache.hit_cnt+manager.cache.hit_cnt)
-            )
-        sleep(1)
+        hits = manager.cache.hit_cnt
+        misses = manager.cache.miss_cnt
+        ttt = hits + misses if hits + misses != 0 else 1
+        evicts = manager.cache.evict_cnt
+        print("cache:: hits:", hits, ", misses:", misses, ", evicts:", evicts, ", hit ratio:", hits/ttt*100, "\n")
+        sleep(5)

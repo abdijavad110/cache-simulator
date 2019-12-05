@@ -10,7 +10,7 @@ class CacheElem:
 class Cache:
     def __init__(self):
         self.__cache = []
-        self.presence = [False]*conf['maxAddr']
+        self.presence = [False]*(conf['maxAddr']//conf['minReqLen'])
         # todo add requests queue
         self.miss_cnt = 0
         self.hit_cnt = 0
@@ -25,16 +25,16 @@ class Cache:
         map(lambda q: self.issue_request(q, conf['blkSize']), sub_req)
 
         # check hit
-        if self.presence[addr]:
+        if self.presence[addr//conf['minReqLen']]:
             self.hit_cnt += 1
-            self.__some_thing_unknown(addr)
+            self.__some_thing_unnamed(addr)
             return
 
         # miss occurred
         self.miss_cnt += 1
         self.promote(addr)
 
-    def __some_thing_unknown(self, addr):
+    def __some_thing_unnamed(self, addr):
         # LRU
         for i, v in enumerate(self.__cache):
             if v.addr == addr:
@@ -49,9 +49,11 @@ class Cache:
             free_addr = len(self.__cache)
 
         self.__cache.insert(free_addr, CacheElem(addr))
+        self.presence[addr//conf['minReqLen']] = True
 
     def __evict(self, addr):
         # LRU
         self.evict_cnt += 1
         self.__cache.pop()
+        self.presence[addr//conf['minReqLen']] = False
         return conf['cacheSize'] - 1

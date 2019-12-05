@@ -1,13 +1,14 @@
 {
-  "traceFilePath": "trace/a",
+  "traceFilePath": "trace/NEW_CAMRESWEBA03-lvm1.csv",
   "traceDil": ",",
-  "indicesCnt": 5,
+  "indicesCnt": 4,
   "timeInd": 0,
-  "RWInd": 2,
-  "addrInd": 3,
-  "sizeInd": 4,
+  "RWInd": 1,
+  "addrInd": 2,
+  "sizeInd": 3,
   "blkSize": 4096,
-  "maxAddr": 10000000,
-  "cacheSize": 1024,
-  "delayFactor": 10
+  "minReqLen": 512,
+  "cacheSize": 1,
+  "maxAddr": 72831761920,
+  "delayFactor": 0.0000000001
 }

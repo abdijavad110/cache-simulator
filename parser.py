@@ -9,7 +9,8 @@ class Parser:
         trace = [e for e in trace if len(e) == conf['indicesCnt']]
 
         self.requests = list(map(
-            lambda q: [float(q[conf['timeInd']])*conf['delayFactor'], q[conf['RWInd']], q[conf['addrInd']], q[conf['sizeInd']]],
+            lambda q: [(float(q[conf['timeInd']])-float(trace[0][conf['timeInd']]))*conf['delayFactor'],
+                       q[conf['RWInd']], int(q[conf['addrInd']]), int(q[conf['sizeInd']])],
             trace))
         self.cnt = len(self.requests)
         self.currentRequest = 0
@@ -17,7 +18,8 @@ class Parser:
     def start_sending_requests(self, dest):
         start = time()
         for req in self.requests:
-            now = time() - start
-            while now < req[0]:
-                sleep(10/1000000)
+            # print(now, req[0])
+            while time() - start < req[0]:
+                sleep(2/1000000)
             dest(req[2], req[3])
+            self.currentRequest += 1
