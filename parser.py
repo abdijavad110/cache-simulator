@@ -5,7 +5,7 @@ from time import sleep, time
 class Parser:
     def __init__(self):
         trace = open(conf['traceFilePath']).read().split("\n")
-        trace = list(map(lambda q: q.split(), trace))
+        trace = list(map(lambda q: q.split(conf['traceDil']), trace))
         trace = [e for e in trace if len(e) == conf['indicesCnt']]
 
         self.requests = list(map(

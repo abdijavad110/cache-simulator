@@ -27,24 +27,31 @@ class Cache:
         # check hit
         if self.presence[addr]:
             self.hit_cnt += 1
-            # LRU
-            for i, v in enumerate(self.__cache):
-                if v.addr == addr:
-                    self.__cache[0], self.__cache[i] = self.__cache[i], self.__cache[0]
-                    break
+            self.__some_thing_unknown(addr)
             return
 
         # miss occurred
         self.miss_cnt += 1
+        self.promote(addr)
+
+    def __some_thing_unknown(self, addr):
+        # LRU
+        for i, v in enumerate(self.__cache):
+            if v.addr == addr:
+                # fixme promote instead of replacement
+                self.__cache[0], self.__cache[i] = self.__cache[i], self.__cache[0]
+                break
+
+    def promote(self, addr):
         if len(self.__cache) == conf['cacheSize']:
-            free_addr = self.evict(addr)
+            free_addr = self.__evict(addr)
         else:
             free_addr = len(self.__cache)
 
         self.__cache.insert(free_addr, CacheElem(addr))
 
-    def evict(self, addr):
+    def __evict(self, addr):
         # LRU
         self.evict_cnt += 1
         self.__cache.pop()
-        return conf['cacheSize']
+        return conf['cacheSize'] - 1

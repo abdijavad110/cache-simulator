@@ -1,5 +1,6 @@
 {
   "traceFilePath": "trace/a",
+  "traceDil": ",",
   "indicesCnt": 5,
   "timeInd": 0,
   "RWInd": 2,
