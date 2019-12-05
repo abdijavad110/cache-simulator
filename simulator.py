@@ -2,6 +2,7 @@ from time import sleep
 from storage.manager import Manager
 from parser import Parser
 import threading
+import sys
 
 
 # fixme shouldn't be in manager?
@@ -40,12 +41,20 @@ if __name__ == "__main__":
     parse_trd.start()
     stg_trd.start()
     # monitoring:
-    while parse_trd.is_alive():
+    print("\n\n\n")
+    hits, misses, evicts, ttt = 0, 0, 0, 0
+    while parse_trd.is_alive() or len(req_Q) != 0:
+        for i in range(3):
+            sys.stdout.write('\x1b[1A')
+            sys.stdout.write('\x1b[2K')
+        sleep(0.5)
         print("trace:\t", parser.currentRequest, "/", parser.cnt)
         print("requests len:\t", len(req_Q))
         hits = manager.cache.hit_cnt
         misses = manager.cache.miss_cnt
         ttt = hits + misses if hits + misses != 0 else 1
         evicts = manager.cache.evict_cnt
-        print("cache:: hits:", hits, ", misses:", misses, ", evicts:", evicts, ", hit ratio:", hits/ttt*100, "\n")
-        sleep(5)
+        print("cache:: hits:", hits, ", misses:", misses, ", evicts:", evicts, ", hit ratio:", hits/ttt*100)
+
+    print("\nfinal result:\nhits: ", hits, "\nmisses: ", misses, "\nevicts: ", evicts, "\nhit ratio: ", hits/ttt*100)
+

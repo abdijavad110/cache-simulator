@@ -8,7 +8,7 @@
   "sizeInd": 3,
   "blkSize": 4096,
   "minReqLen": 512,
-  "cacheSize": 1,
+  "cacheSize": 4096,
   "maxAddr": 72831761920,
-  "delayFactor": 0.0000000001
+  "delayFactor": 0.000000000002
 }

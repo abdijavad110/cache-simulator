@@ -10,7 +10,7 @@ class CacheElem:
 class Cache:
     def __init__(self):
         self.__cache = []
-        self.presence = [False]*(conf['maxAddr']//conf['minReqLen'])
+        self.presence = [False]*(conf['maxAddr']//conf['minReqLen']+1)
         # todo add requests queue
         self.miss_cnt = 0
         self.hit_cnt = 0
@@ -54,6 +54,6 @@ class Cache:
     def __evict(self, addr):
         # LRU
         self.evict_cnt += 1
-        self.__cache.pop()
-        self.presence[addr//conf['minReqLen']] = False
+        evicted = self.__cache.pop()
+        self.presence[evicted.addr//conf['minReqLen']] = False
         return conf['cacheSize'] - 1
