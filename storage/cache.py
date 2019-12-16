@@ -31,11 +31,13 @@ class Cache:
         self.__WCQ = []
         self.__SPQ = []
         self.ram_blk_cnt = 0
+        self.ssd_blk_cnt = 0
         self.requests_cnt = 0
         self.thread = None
         # fixme fix qt update
-        self.qt = 100
+        self.qt = (((conf.ssdCapacity+conf.ramCapacity) // conf.storageCapacity) ** 0.5) * conf.storageCapacity
         self.promotion_tsh = 100
+        self.WCQ_max_size = conf.ssdCapacity + conf.ramCapacity
 
     def issue_request(self, addr, length, typ):
         self.requests_cnt += 1
@@ -97,13 +99,14 @@ class Cache:
             self.wcq_evict()
 
     def wcq_evict(self):
-        # FixMe find and evict block y
-        y = CacheElem()
-        for blk in self.__SPQ:
-            blk.idle_time += 1
-        if y.typ == Consts.ssd_blk:
-            y.idle_time = len(self.__WCQ)
-            self.__SPQ.insert(0, y)
+        while len(self.__WCQ) > self.WCQ_max_size:
+            y = self.__WCQ.pop()
+
+            for blk in self.__SPQ:
+                blk.idle_time += 1
+            if y.typ == Consts.ssd_blk:
+                y.idle_time = len(self.__WCQ)
+                self.__SPQ.insert(0, y)
 
     def _ram_replace(self):
         if self.ram_blk_cnt > conf.ramCapacity:
@@ -113,36 +116,49 @@ class Cache:
                     break
             self.ram_blk_cnt -= 1
 
-    def update_ssd(self, addr):
+    def update_ssd(self):
         d = 0
         for i in range(len(self.__SPQ)):
             if self.__SPQ[i-d].idle_time > self.qt:
                 del self.__SPQ[i-d]
+                self.ssd_blk_cnt -= 1
                 d += 1
         if d == 0:
             return
 
-        r = 0
-        for i in range(len(self.__WCQ)):
-            # todo break when pulled blocks are enough
-            if self.__WCQ[i].typ != Consts.ssd_blk and self.__WCQ[i].accesses > self.promotion_tsh:
-                self.__WCQ[i].typ = Consts.ssd_blk
+        candidates_need_total = conf.ssdCapacity - self.ssd_blk_cnt
+        candidates_available = len(self.__WCQ) - self.ssd_blk_cnt + len(self.__SPQ)     # available in RAM or SSD
+
+        found = 0
+        for blk in self.__WCQ:
+            if found == candidates_need_total:
+                break
+
+            if blk.typ != Consts.ssd_blk and blk.accesses > self.promotion_tsh:
+                found += 1
                 self.write_cnt += 1
+                self.ssd_blk_cnt += 1
+                blk.typ = Consts.ssd_blk
+
+        # fixme now minimum is ram + ssd candidates need
+        diff = candidates_available - candidates_need_total + conf.ramCapacity
+        if diff < 0:
+            self.WCQ_max_size += diff
+            return
+        evicted = []
+        for blk in reversed(self.__WCQ):
+            if diff == 0:
+                break
+            if blk.typ == Consts.hdd_blk:
+                evicted.append(self.__WCQ.index(blk))
+        self.WCQ_max_size -= len(evicted)
+        for e in evicted:
+            self.__WCQ.remove(e)
 
     def promote(self, addr, length):
-        # fixme promotion policy
-        if len(self.__cache) == conf.cacheSize:
-            free_addr = self.__evict(addr)
-        else:
-            free_addr = len(self.__cache)
-
-        self.__cache.insert(free_addr, CacheElem(addr))
-        self.presence[addr//conf.minReqLen] = True
-        # fixme set presence True for all 4096B not 512B
+        # deprecated
+        pass
 
     def __evict(self, addr):
-        # LRU
-        self.evict_cnt += 1
-        evicted = self.__cache.pop()
-        self.presence[evicted.addr//conf.minReqLen] = False
-        return conf.cacheSize - 1
+        # deprecated
+        pass
