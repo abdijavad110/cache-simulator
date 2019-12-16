@@ -10,7 +10,7 @@ class CacheElem:
 class Cache:
     def __init__(self):
         self.__cache = []
-        self.presence = [False]*(conf['maxAddr']//conf['minReqLen']+1)
+        self.presence = [False]*(conf.maxAddr//conf.minReqLen+1)
         # todo add requests queue
         self.miss_cnt = 0
         self.hit_cnt = 0
@@ -20,12 +20,12 @@ class Cache:
         # divide big requests
         # todo use better division
         sub_req = [
-            addr + l*conf['blkSize'] for l in range(1, length//conf['blkSize'])
+            addr + l*conf.blkSize for l in range(1, length//conf.blkSize)
                    ]
-        map(lambda q: self.issue_request(q, conf['blkSize']), sub_req)
+        map(lambda q: self.issue_request(q, conf.blkSize), sub_req)
 
         # check hit
-        if self.presence[addr//conf['minReqLen']]:
+        if self.presence[addr//conf.minReqLen]:
             self.hit_cnt += 1
             self.__some_thing_unnamed(addr)
             return
@@ -43,17 +43,17 @@ class Cache:
                 break
 
     def promote(self, addr):
-        if len(self.__cache) == conf['cacheSize']:
+        if len(self.__cache) == conf.cacheSize:
             free_addr = self.__evict(addr)
         else:
             free_addr = len(self.__cache)
 
         self.__cache.insert(free_addr, CacheElem(addr))
-        self.presence[addr//conf['minReqLen']] = True
+        self.presence[addr//conf.minReqLen] = True
 
     def __evict(self, addr):
         # LRU
         self.evict_cnt += 1
         evicted = self.__cache.pop()
-        self.presence[evicted.addr//conf['minReqLen']] = False
-        return conf['cacheSize'] - 1
+        self.presence[evicted.addr//conf.minReqLen] = False
+        return conf.cacheSize - 1

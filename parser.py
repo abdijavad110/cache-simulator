@@ -4,13 +4,13 @@ from time import sleep, time
 
 class Parser:
     def __init__(self):
-        trace = open(conf['traceFilePath']).read().split("\n")
-        trace = list(map(lambda q: q.split(conf['traceDil']), trace))
-        trace = [e for e in trace if len(e) == conf['indicesCnt']]
+        trace = open(conf.traceFilePath).read().split("\n")
+        trace = list(map(lambda q: q.split(conf.traceDil), trace))
+        trace = [e for e in trace if len(e) == conf.indicesCnt]
 
         self.requests = list(map(
-            lambda q: [(float(q[conf['timeInd']])-float(trace[0][conf['timeInd']]))*conf['delayFactor'],
-                       q[conf['RWInd']], int(q[conf['addrInd']]), int(q[conf['sizeInd']])],
+            lambda q: [(float(q[conf.timeInd])-float(trace[0][conf.timeInd]))*conf.delayFactor,
+                       q[conf.RWInd], int(q[conf.addrInd]), int(q[conf.sizeInd])],
             trace))
         self.cnt = len(self.requests)
         self.currentRequest = 0
