@@ -75,9 +75,7 @@ class Cache:
                     else:
                         # case 1.1
                         self.hit_cnt += 1
-                        print(blk.addr)
                         del self.__WCQ[i]
-                        print(blk.addr)
                         self.__WCQ.insert(0, blk)
                     return True
 

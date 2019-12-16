@@ -42,7 +42,7 @@ if __name__ == "__main__":
     stg_trd.start()
     # monitoring:
     print("\n\n\n")
-    hits, misses, evicts, ttt = 0, 0, 0, 0
+    hits, misses, writes, ttt = 0, 0, 0, 0
     try:
         while parse_trd.is_alive() or len(req_Q) != 0:
             for i in range(3):
@@ -54,10 +54,10 @@ if __name__ == "__main__":
             hits = manager.cache.hit_cnt
             misses = manager.cache.miss_cnt
             ttt = hits + misses if hits + misses != 0 else 1
-            evicts = manager.cache.evict_cnt
-            print("cache:: hits:", hits, ", misses:", misses, ", evicts:", evicts, ", hit ratio:", hits/ttt*100)
+            writes = manager.cache.write_cnt
+            print("cache:: hits:", hits, ", misses:", misses, ", writes:", writes, ", hit ratio:", hits/ttt*100)
     except KeyboardInterrupt:
         pass
 
-    print("\nfinal result:\nhits: ", hits, "\nmisses: ", misses, "\nevicts: ", evicts, "\nhit ratio: ", hits/ttt*100)
+    print("\nfinal result:\nhits: ", hits, "\nmisses: ", misses, "\nwrites: ", writes, "\nhit ratio: ", hits/ttt*100)
 
