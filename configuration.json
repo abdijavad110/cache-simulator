@@ -4,11 +4,15 @@
   "indicesCnt": 4,
   "timeInd": 0,
   "RWInd": 1,
+  "rSym": "R",
+  "wSym": "W",
   "addrInd": 2,
   "sizeInd": 3,
   "blkSize": 4096,
   "minReqLen": 512,
   "cacheSize": 16384,
+  "ramCapacity": 1024,
   "maxAddr": 72831761920,
-  "delayFactor": 0.000000000002
+  "delayFactor": 0.000000000002,
+  "ssdUpdateInterval": 50000
 }

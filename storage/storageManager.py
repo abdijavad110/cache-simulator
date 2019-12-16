@@ -1,8 +1,8 @@
 import threading
 
 
-class StgMgr:
-    def __init__(self):
+class Storage:
+    def __init__(self, manager):
         # real implementation:
         # self.__cache_miss_queue = []
         # self.__cache_lock = threading.Lock()
@@ -11,8 +11,10 @@ class StgMgr:
 
         # simplified:
         self.IO_cnt = 0
-        pass
+        self.manager = manager
 
-    def issue_request(self, addr, length):
-        self.fulfilled_requests += 1
+    def issue_request(self, addr, length, redirect):
+        self.IO_cnt += 1
+        if redirect:
+            self.manager.cache.promote(addr, length)
         return True

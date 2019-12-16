@@ -1,12 +1,12 @@
 from storage.cache import Cache
-from storage.storageManager import StgMgr
+from storage.storageManager import Storage
 
 
 class Manager:
     def __init__(self):
-        self.cache = Cache()
-        self.stg_mgr = StgMgr()
+        self.storage = Storage(self)
+        self.cache = Cache(self)
 
-    def issue_request(self, addr, length):
-        self.cache.issue_request(addr, length)
+    def issue_request(self, addr, length, typ):
+        self.cache.issue_request(addr, length, typ)
 
