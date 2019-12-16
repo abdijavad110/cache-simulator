@@ -1,5 +1,5 @@
 {
-  "traceFilePath": "trace/NEW_CAMRESHMSA01-lvm1.csv",
+  "traceFilePath": "trace/NEW_CAMRESWEBA03-lvm1.csv",
   "traceDil": ",",
   "indicesCnt": 4,
   "timeInd": 0,
@@ -10,10 +10,11 @@
   "sizeInd": 3,
   "blkSize": 4096,
   "minReqLen": 512,
-  "ssdCapacity": 1800000,
-  "ramCapacity": 128000,
-  "storageCapacity": 18000000,
+  "ssdCapacity": 268435456,
+  "ramCapacity": 8388608,
+  "storageCapacity": 1342177280,
   "maxAddr": 72831761920,
   "delayFactor": 0.00000000002,
-  "ssdUpdateInterval": 500
+  "ssdUpdateInterval": 500,
+  "promotionTsh": 1
 }

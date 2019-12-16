@@ -49,8 +49,8 @@ if __name__ == "__main__":
                 sys.stdout.write('\x1b[2K')
             sleep(0.5)
             print("trace:\t", parser.currentRequest, "/", parser.cnt)
-            print("requests len:\t", len(req_Q), " WCQ len:", len(manager.cache.WCQ), " SPQ len:",
-                  len(manager.cache.SPQ))
+            print("requests len:\t", len(req_Q), " WCQ len:", len(manager.cache.WCQ), "/", manager.cache.WCQ_max_size
+                  , " SPQ len:", len(manager.cache.SPQ), " QT:", manager.cache.qt)
             hits = manager.cache.hit_cnt
             misses = manager.cache.miss_cnt
             writes = manager.cache.write_cnt
