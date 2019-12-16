@@ -4,7 +4,6 @@ from parser import Parser
 import threading
 import sys
 
-
 # fixme shouldn't be in manager?
 req_Q = []
 Q_lock = threading.Lock()
@@ -21,7 +20,7 @@ def new_request(addr, length, typ):
 def poll_q():
     while True:
         while len(req_Q) == 0:
-            sleep(5/1000000)
+            sleep(5 / 1000000)
         Q_lock.acquire()
         manager.issue_request(req_Q[0][0], req_Q[0][1], req_Q[0][2])
         req_Q.pop(0)
@@ -42,7 +41,7 @@ if __name__ == "__main__":
     stg_trd.start()
     # monitoring:
     print("\n\n\n")
-    hits, misses, writes, ttt = 0, 0, 0, 0
+    hits, ram_hits, misses, writes, ttt, tt = 0, 0, 0, 0, 0, 0
     try:
         while parse_trd.is_alive() or len(req_Q) != 0:
             for i in range(3):
@@ -50,14 +49,18 @@ if __name__ == "__main__":
                 sys.stdout.write('\x1b[2K')
             sleep(0.5)
             print("trace:\t", parser.currentRequest, "/", parser.cnt)
-            print("requests len:\t", len(req_Q))
+            print("requests len:\t", len(req_Q), " WCQ len:", len(manager.cache.WCQ), " SPQ len:",
+                  len(manager.cache.SPQ))
             hits = manager.cache.hit_cnt
             misses = manager.cache.miss_cnt
-            ttt = hits + misses if hits + misses != 0 else 1
             writes = manager.cache.write_cnt
-            print("cache:: hits:", hits, ", misses:", misses, ", writes:", writes, ", hit ratio:", hits/ttt*100)
+            ram_hits = manager.cache.ram_hit_cnt
+            tt = writes if writes != 0 else 1
+            ttt = hits + ram_hits + misses if hits + ram_hits + misses != 0 else 1
+            print("cache:: hits:", hits, " ram hits:", ram_hits, " misses:", misses, " writes:", writes, ", hit ratio:",
+                  (hits + ram_hits) / ttt * 100, " WE:", hits / tt)
     except KeyboardInterrupt:
         pass
 
-    print("\nfinal result:\nhits: ", hits, "\nmisses: ", misses, "\nwrites: ", writes, "\nhit ratio: ", hits/ttt*100)
-
+    print("\ntrace:\t", parser.currentRequest, "/", parser.cnt, "\nfinal result:\nhits: ", hits, "\nram hits:", ram_hits, "\nmisses: ", misses, "\nwrites: ", writes,
+          "\nhit ratio: ", (hits + ram_hits) / ttt * 100, " WE:", hits / tt)

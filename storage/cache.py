@@ -21,22 +21,22 @@ class Consts:
 
 class Cache:
     def __init__(self, manager):
-        self.__cache = []
-        self.presence = [False]*(conf.maxAddr//conf.minReqLen+1)
+        # self.presence = [False]*(conf.maxAddr//conf.minReqLen+1)
         self.miss_cnt = 0
         self.hit_cnt = 0
+        self.ram_hit_cnt = 0
         self.write_cnt = 0
         self.manager = manager
 
-        self.__WCQ = []
-        self.__SPQ = []
+        self.WCQ = []
+        self.SPQ = []
         self.ram_blk_cnt = 0
         self.ssd_blk_cnt = 0
         self.requests_cnt = 0
         self.thread = None
         # fixme fix qt update
         self.qt = (((conf.ssdCapacity+conf.ramCapacity) // conf.storageCapacity) ** 0.5) * conf.storageCapacity
-        self.promotion_tsh = 100
+        self.promotion_tsh = 2
         self.WCQ_max_size = conf.ssdCapacity + conf.ramCapacity
 
     def issue_request(self, addr, length, typ):
@@ -49,66 +49,73 @@ class Cache:
 
         if typ == Consts.write:
             # case 2
-            for i, blk in enumerate(self.__WCQ):
+            self.miss_cnt += 1
+            for i, blk in enumerate(self.WCQ):
                 if blk.addr == addr:
-                    del self.__WCQ[i]
+                    del self.WCQ[i]
                     return True
-            for i, blk in enumerate(self.__SPQ):
+            for i, blk in enumerate(self.SPQ):
                 if blk.addr == addr:
-                    del self.__SPQ[i]
+                    del self.SPQ[i]
                     return True
 
         else:
             # case 1
             # todo use presence to accelerate search
             # search WCQ
-            for i, blk in enumerate(self.__WCQ):
+            for i, blk in enumerate(self.WCQ):
                 if blk.addr == addr:
+                    blk.accesses += 1
                     if blk.typ == Consts.hdd_blk:
                         # case 1.2
                         self.miss_cnt += 1
                         blk.typ = Consts.ram_blk
                         self.ram_blk_cnt += 1
-                        del self.__WCQ[i]
-                        self.__WCQ.insert(0, blk)
+                        del self.WCQ[i]
+                        self.WCQ.insert(0, blk)
                         self._ram_replace()
                     else:
                         # case 1.1
-                        self.hit_cnt += 1
-                        del self.__WCQ[i]
-                        self.__WCQ.insert(0, blk)
+                        if blk.typ == Consts.ram_blk:
+                            self.ram_hit_cnt += 1
+                        else:
+                            self.hit_cnt += 1
+
+                        del self.WCQ[i]
+                        self.WCQ.insert(0, blk)
                     return True
 
             # search SPQ
-            for i, blk in enumerate(self.__SPQ):
+            for i, blk in enumerate(self.SPQ):
                 if blk.addr == addr:
                     # case 1.3
+                    # write misses
                     self.hit_cnt += 1
-                    del self.__SPQ[i]
-                    self.__WCQ.insert(0, blk)
+                    del self.SPQ[i]
+                    self.WCQ.insert(0, blk)
                     self.wcq_evict()
                     return True
 
             # case 1.4
             self.miss_cnt += 1
             new_blk = CacheElem(addr, Consts.ram_blk)
-            self.__WCQ.insert(0, new_blk)
+            self.WCQ.insert(0, new_blk)
             self._ram_replace()
             self.wcq_evict()
 
     def wcq_evict(self):
-        while len(self.__WCQ) > self.WCQ_max_size:
-            y = self.__WCQ.pop()
+        while len(self.WCQ) > self.WCQ_max_size and len(self.WCQ) != 0:
+            y = self.WCQ.pop()
 
-            for blk in self.__SPQ:
+            for blk in self.SPQ:
                 blk.idle_time += 1
             if y.typ == Consts.ssd_blk:
-                y.idle_time = len(self.__WCQ)
-                self.__SPQ.insert(0, y)
+                y.idle_time = len(self.WCQ)
+                self.SPQ.insert(0, y)
 
     def _ram_replace(self):
         if self.ram_blk_cnt > conf.ramCapacity:
-            for blk in reversed(self.__WCQ):
+            for blk in reversed(self.WCQ):
                 if blk.typ == Consts.ram_blk:
                     blk.typ = Consts.hdd_blk
                     break
@@ -116,19 +123,17 @@ class Cache:
 
     def update_ssd(self):
         d = 0
-        for i in range(len(self.__SPQ)):
-            if self.__SPQ[i-d].idle_time > self.qt:
-                del self.__SPQ[i-d]
+        for i in range(len(self.SPQ)):
+            if self.SPQ[i - d].idle_time > self.qt:
+                del self.SPQ[i - d]
                 self.ssd_blk_cnt -= 1
                 d += 1
-        if d == 0:
-            return
 
         candidates_need_total = conf.ssdCapacity - self.ssd_blk_cnt
-        candidates_available = len(self.__WCQ) - self.ssd_blk_cnt + len(self.__SPQ)     # available in RAM or SSD
+        candidates_available = len(self.WCQ) - self.ssd_blk_cnt + len(self.SPQ)     # available in RAM or SSD
 
         found = 0
-        for blk in self.__WCQ:
+        for blk in self.WCQ:
             if found == candidates_need_total:
                 break
 
@@ -144,14 +149,14 @@ class Cache:
             self.WCQ_max_size += diff
             return
         evicted = []
-        for blk in reversed(self.__WCQ):
+        for blk in reversed(self.WCQ):
             if diff == 0:
                 break
             if blk.typ == Consts.hdd_blk:
-                evicted.append(self.__WCQ.index(blk))
+                evicted.append(self.WCQ.index(blk))
         self.WCQ_max_size -= len(evicted)
         for e in evicted:
-            self.__WCQ.remove(e)
+            self.WCQ.remove(e)
 
     def promote(self, addr, length):
         # deprecated
