@@ -3,6 +3,7 @@ from storage.manager import Manager
 from parser import Parser
 import threading
 import sys
+import tqdm
 
 # fixme shouldn't be in manager?
 req_Q = []
@@ -20,7 +21,7 @@ def new_request(addr, length, typ):
 def poll_q():
     while True:
         while len(req_Q) == 0:
-            sleep(5 / 1000000)
+            sleep(2 / 1000000)
         Q_lock.acquire()
         manager.issue_request(req_Q[0][0], req_Q[0][1], req_Q[0][2])
         req_Q.pop(0)
@@ -48,7 +49,13 @@ if __name__ == "__main__":
                 sys.stdout.write('\x1b[1A')
                 sys.stdout.write('\x1b[2K')
             sleep(0.5)
-            print("trace:\t", parser.currentRequest, "/", parser.cnt)
+            print("trace:\t", parser.currentRequest, "/", parser.cnt, end='   [')
+            for _ in range(int(parser.currentRequest/parser.cnt*100)):
+                print(u'\u2588', end='')
+            for _ in range(int(parser.currentRequest/parser.cnt*100), 100):
+                print(u'\u2591', end='')
+            print(']')
+
             print("requests len:\t", len(req_Q), " WCQ len:", len(manager.cache.WCQ), "/", manager.cache.WCQ_max_size
                   , " SPQ len:", len(manager.cache.SPQ), " QT:", manager.cache.qt)
             hits = manager.cache.hit_cnt
