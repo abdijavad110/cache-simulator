@@ -101,9 +101,13 @@ class Cache:
             self.SPQ_lck.acquire()
             for i, blk in enumerate(self.SPQ):
                 if blk.addr == addr:
-                    del self.SPQ[i]
-                    self.ssd_write_evict_cnt += 1
-                    self.SPQ_lck.release()
+                    if blk.accesses > 5 and blk.writes / blk.reads < 0.25:
+                        blk.writes += 1
+                        self.hit_cnt += 1
+                    else:
+                        del self.SPQ[i]
+                        self.ssd_write_evict_cnt += 1
+                        self.SPQ_lck.release()
                     return True
             self.SPQ_lck.release()
 
@@ -160,6 +164,7 @@ class Cache:
             self.case14 += 1
             self.miss_cnt += 1
             new_blk = CacheElem(addr, Consts.ram_blk)
+            new_blk.reads += 1
             self.ram_blk_cnt += 1
             self.WCQ_lck.acquire()
             self.WCQ.insert(0, new_blk)
