@@ -45,6 +45,11 @@ class Cache:
         self.WCQ_max_size = 1000
 
         self.temp = 0
+        self.case11 = 0
+        self.case12 = 0
+        self.case13 = 0
+        self.case14 = 0
+        self.case2 = 0
 
     def issue_request(self, addr, length, typ):
 
@@ -61,6 +66,7 @@ class Cache:
 
         if typ == Consts.write:
             # case 2
+            self.case2 += 1
             self.miss_cnt += 1
             self.WCQ_lck.acquire()
 
@@ -71,6 +77,7 @@ class Cache:
 
                 if blk.typ == Consts.ram_blk:
                     self.ram_write_evict_cnt += 1
+                    self.ram_blk_cnt -= 1
                 elif blk.typ == Consts.ssd_blk:
                     self.ssd_write_evict_cnt += 1
 
@@ -99,6 +106,7 @@ class Cache:
                 blk.accesses += 1
                 if blk.typ == Consts.hdd_blk:
                     # case 1.2
+                    self.case12 += 1
                     self.miss_cnt += 1
                     blk.typ = Consts.ram_blk
                     self.ram_blk_cnt += 1
@@ -108,6 +116,7 @@ class Cache:
                     self._ram_replace()
                 else:
                     # case 1.1
+                    self.case11 += 1
                     if blk.typ == Consts.ram_blk:
                         self.ram_hit_cnt += 1
                     else:
@@ -125,7 +134,7 @@ class Cache:
             for i, blk in enumerate(self.SPQ):
                 if blk.addr == addr:
                     # case 1.3
-                    # write misses
+                    self.case13 += 1
                     self.hit_cnt += 1
                     del self.SPQ[i]
                     self.WCQ.insert(0, blk)
@@ -135,6 +144,7 @@ class Cache:
             self.SPQ_lck.release()
 
             # case 1.4
+            self.case14 += 1
             self.miss_cnt += 1
             new_blk = CacheElem(addr, Consts.ram_blk)
             self.ram_blk_cnt += 1
