@@ -35,6 +35,8 @@ class Cache:
         self.ram_blk_cnt = 0
         self.ssd_blk_cnt = 0
         self.requests_cnt = 0
+        self.ram_write_evict_cnt = 0
+        self.ssd_write_evict_cnt = 0
         self.thread = None
         # fixme fix qt update
         self.qt = (((conf.ssdCapacity + conf.ramCapacity) / conf.storageCapacity) ** 0.5) * conf.storageCapacity
@@ -64,7 +66,14 @@ class Cache:
 
             try:
                 idx = [blk.addr for blk in self.WCQ].index(addr)
+                blk = self.WCQ[idx]
                 del self.WCQ[idx]
+
+                if blk.typ == Consts.ram_blk:
+                    self.ram_write_evict_cnt += 1
+                elif blk.typ == Consts.ssd_blk:
+                    self.ssd_write_evict_cnt += 1
+
                 self.WCQ_lck.release()
                 return True
             except ValueError:
@@ -74,6 +83,7 @@ class Cache:
             for i, blk in enumerate(self.SPQ):
                 if blk.addr == addr:
                     del self.SPQ[i]
+                    self.ssd_write_evict_cnt += 1
                     self.SPQ_lck.release()
                     return True
             self.SPQ_lck.release()

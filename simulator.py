@@ -49,12 +49,12 @@ if __name__ == "__main__":
                 sys.stdout.write('\x1b[1A')
                 sys.stdout.write('\x1b[2K')
             sleep(0.5)
-            print("trace:\t", parser.currentRequest, "/", parser.cnt, end='   [')
-            for _ in range(int(parser.currentRequest/parser.cnt*100)):
+            print("trace:\t", parser.currentRequest, "/", parser.cnt, end='   ')
+            for _ in range(int(parser.currentRequest / parser.cnt * 100)):
                 print(u'\u2588', end='')
-            for _ in range(int(parser.currentRequest/parser.cnt*100), 100):
+            for _ in range(int(parser.currentRequest / parser.cnt * 100), 100):
                 print(u'\u2591', end='')
-            print(']')
+            print('')
 
             print("requests len:\t", len(req_Q), " WCQ len:", len(manager.cache.WCQ), "/", manager.cache.WCQ_max_size
                   , " SPQ len:", len(manager.cache.SPQ), " QT:", manager.cache.qt)
@@ -64,10 +64,12 @@ if __name__ == "__main__":
             ram_hits = manager.cache.ram_hit_cnt
             tt = writes if writes != 0 else 1
             ttt = hits + ram_hits + misses if hits + ram_hits + misses != 0 else 1
-            print("cache:: hits:", hits, " ram hits:", ram_hits, " misses:", misses, " writes:", writes, ", hit ratio:",
-                  (hits + ram_hits) / ttt * 100, " WE:", hits / tt)
+            print("cache:: hits:", hits, " ram hits:", ram_hits, " misses:", misses, " writes:", writes,
+                  ' hit ratio: %.4f' % ((hits + ram_hits) / ttt * 100), ' WE: %.4f' % (hits / tt), " RE:",
+                  manager.cache.ram_write_evict_cnt, ' SE:', manager.cache.ssd_write_evict_cnt)
     except KeyboardInterrupt:
         pass
 
-    print("\ntrace:\t", parser.currentRequest, "/", parser.cnt, "\nfinal result:\nhits: ", hits, "\nram hits:", ram_hits, "\nmisses: ", misses, "\nwrites: ", writes,
+    print("\ntrace:\t", parser.currentRequest, "/", parser.cnt, "\nfinal result:\nhits: ", hits, "\nram hits:",
+          ram_hits, "\nmisses: ", misses, "\nwrites: ", writes,
           "\nhit ratio: ", (hits + ram_hits) / ttt * 100, " WE:", hits / tt)
