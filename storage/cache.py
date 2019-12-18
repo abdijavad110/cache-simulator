@@ -8,7 +8,12 @@ class CacheElem:
         self.addr = addr
         self.typ = typ
         self.idle_time = idle_time
-        self.accesses = 0
+        self.writes = 0
+        self.reads = 0
+
+    @property
+    def accesses(self):
+        return self.reads + self.writes
 
 
 class Consts:
@@ -67,19 +72,26 @@ class Cache:
         if typ == Consts.write:
             # case 2
             self.case2 += 1
-            self.miss_cnt += 1
             self.WCQ_lck.acquire()
 
             try:
                 idx = [blk.addr for blk in self.WCQ].index(addr)
                 blk = self.WCQ[idx]
-                del self.WCQ[idx]
 
-                if blk.typ == Consts.ram_blk:
-                    self.ram_write_evict_cnt += 1
-                    self.ram_blk_cnt -= 1
-                elif blk.typ == Consts.ssd_blk:
-                    self.ssd_write_evict_cnt += 1
+                if blk.typ != Consts.ssd_blk:
+                    if blk.typ == Consts.ram_blk:
+                        self.ram_write_evict_cnt += 1
+                        self.ram_blk_cnt -= 1
+                        self.miss_cnt += 1
+                    del self.WCQ[idx]
+                else:
+                    if blk.accesses > 5 and blk.writes / blk.reads < 0.25:
+                        blk.writes += 1
+                        self.hit_cnt += 1
+                    else:
+                        self.ssd_write_evict_cnt += 1
+                        self.miss_cnt += 1
+                        del self.WCQ[idx]
 
                 self.WCQ_lck.release()
                 return True
@@ -103,7 +115,7 @@ class Cache:
             try:
                 idx = [blk.addr for blk in self.WCQ].index(addr)
                 blk = self.WCQ[idx]
-                blk.accesses += 1
+                blk.reads += 1
                 if blk.typ == Consts.hdd_blk:
                     # case 1.2
                     self.case12 += 1
@@ -135,6 +147,7 @@ class Cache:
                 if blk.addr == addr:
                     # case 1.3
                     self.case13 += 1
+                    blk.reads += 1
                     self.hit_cnt += 1
                     del self.SPQ[i]
                     self.WCQ.insert(0, blk)
