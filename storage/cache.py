@@ -85,8 +85,9 @@ class Cache:
                         self.miss_cnt += 1
                     del self.WCQ[idx]
                 else:
-                    if blk.accesses > 5 and blk.writes / blk.reads < 0.25:
+                    if blk.accesses > 5 and blk.writes / blk.reads < 0.1:
                         blk.writes += 1
+                        self.write_cnt += 1
                         self.hit_cnt += 1
                     else:
                         self.ssd_write_evict_cnt += 1
@@ -110,6 +111,8 @@ class Cache:
                         self.SPQ_lck.release()
                     return True
             self.SPQ_lck.release()
+
+            self.miss_cnt += 1
 
         else:
             # case 1
@@ -232,7 +235,6 @@ class Cache:
 
         diff = candidates_capacity - candidates_need_total
         if diff < 0:
-            # fixme make WCQ size dynamic
             self.WCQ_max_size -= diff
 
             # ff.write("I %d\n" % diff)
@@ -250,7 +252,6 @@ class Cache:
 
         # ff.write("D %d\n" % len(evicted))
 
-        # fixme make WCQ size dynamic
         self.WCQ_max_size -= len(evicted)
         for e in evicted:
             if len(self.WCQ) <= self.WCQ_max_size:
