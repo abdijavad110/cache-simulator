@@ -58,9 +58,9 @@ class Cache:
 
     def issue_request(self, addr, length, typ):
 
-        # self.temp+=1
-        # if self.temp > 5030:
-        #     print("here")
+        # self.temp += 1
+        # if self.temp > 535882-70:
+            # print("here")
 
         self.requests_cnt += 1
         if self.requests_cnt == conf.ssdUpdateInterval:
@@ -108,7 +108,7 @@ class Cache:
                     else:
                         del self.SPQ[i]
                         self.ssd_write_evict_cnt += 1
-                        self.SPQ_lck.release()
+                    self.SPQ_lck.release()
                     return True
             self.SPQ_lck.release()
 

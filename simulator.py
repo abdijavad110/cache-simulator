@@ -3,9 +3,8 @@ from storage.manager import Manager
 from parser import Parser
 import threading
 import sys
-import tqdm
+# import tqdm
 
-# fixme shouldn't be in manager?
 req_Q = []
 Q_lock = threading.Lock()
 manager = Manager()
@@ -44,11 +43,18 @@ if __name__ == "__main__":
     print("\n\n\n\n")
     hits, ram_hits, misses, writes, ttt, tt = 0, 0, 0, 0, 0, 0
     try:
+        cnt = 0
         while parse_trd.is_alive() or len(req_Q) != 0:
-            for i in range(4):
-                sys.stdout.write('\x1b[1A')
-                sys.stdout.write('\x1b[2K')
-            sleep(0.5)
+            cnt += 1
+            if cnt > 120:
+                cnt = 0
+            else:
+                for i in range(4):
+                    sys.stdout.write('\x1b[1A')
+                    sys.stdout.write('\x1b[2K')
+
+            sleep(1)
+
             print("trace:\t", parser.currentRequest, "/", parser.cnt, end='   ')
             for _ in range(int(parser.currentRequest / parser.cnt * 100)):
                 print(u'\u2588', end='')
@@ -66,8 +72,8 @@ if __name__ == "__main__":
             ttt = hits + ram_hits + misses if hits + ram_hits + misses != 0 else 1
 
             print("case1.1 %d\tcase1.2 %d\tcase1.3 %d\tcase1.4 %d\tcase2 %d" % (
-            manager.cache.case11, manager.cache.case12, manager.cache.case13, manager.cache.case14,
-            manager.cache.case2))
+                manager.cache.case11, manager.cache.case12, manager.cache.case13, manager.cache.case14,
+                manager.cache.case2))
 
             print("cache:: hits:", hits, " ram hits:", ram_hits, " misses:", misses, " writes:", writes,
                   ' hit ratio: %.4f' % ((hits + ram_hits) / ttt * 100), ' WE: %.4f' % (hits / tt), " RE:",
