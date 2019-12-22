@@ -1,5 +1,5 @@
-from storage.cache import Cache
-from storage.storageManager import Storage
+from cache import Cache
+from storageManager import Storage
 
 
 class Manager:

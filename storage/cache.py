@@ -1,6 +1,5 @@
 import threading
 from conf import conf
-from storage.storageManager import Storage
 
 
 class CacheElem:
@@ -61,7 +60,11 @@ class Cache:
         if self.requests_cnt == conf.ssdUpdateInterval:
             self.requests_cnt = 0
             if self.thread is None or not self.thread.is_alive():
-                self.thread = threading.Thread(target=self.update_ssd, daemon=True)
+                self.thread = threading.Thread(
+                    target=self.update_ssd,
+                    # daemon=True
+                )
+                self.thread.setDaemon(True)
                 self.thread.start()
 
         if typ == Consts.write:
