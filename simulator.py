@@ -1,9 +1,9 @@
-from time import sleep
+from time import sleep, time
 from storage.manager import Manager
 from parser import Parser
 import threading
 import sys
-# import tqdm
+
 
 req_Q = []
 Q_lock = threading.Lock()
@@ -44,6 +44,8 @@ if __name__ == "__main__":
     hits, ram_hits, misses, writes, ttt, tt = 0, 0, 0, 0, 0, 0
     try:
         cnt = 0
+        last = 0
+        last_t = .000001
         while parse_trd.is_alive() or len(req_Q) != 0:
             cnt += 1
             if cnt > 120:
@@ -60,7 +62,11 @@ if __name__ == "__main__":
                 print(u'\u2588', end='')
             for _ in range(int(parser.currentRequest / parser.cnt * 100), 100):
                 print(u'\u2591', end='')
-            print('')
+
+            now = parser.currentRequest - len(req_Q)
+            print('  (%.2f req/s)' % (now - last) / (time() - last_t))
+            last_t = time()
+            last = now
 
             print("requests len:\t", len(req_Q), " WCQ len:", len(manager.cache.WCQ), "/", manager.cache.WCQ_max_size
                   , " SPQ len:", len(manager.cache.SPQ), " QT: %.1f" % manager.cache.qt)
