@@ -1,6 +1,6 @@
 import threading
 from conf import conf
-from storage.storageManager import Storage
+from time import time
 
 
 class CacheElem:
@@ -9,6 +9,11 @@ class CacheElem:
         self.typ = typ
         self.idle_time = idle_time
         self.accesses = 0
+        self.last_access_time = 0
+
+    @property
+    def popularity(self):
+        return self.accesses / time()-self.last_access_time
 
 
 class Consts:
@@ -104,6 +109,7 @@ class Cache:
                 idx = [blk.addr for blk in self.WCQ].index(addr)
                 blk = self.WCQ[idx]
                 blk.accesses += 1
+                blk.last_access_time = time()
                 if blk.typ == Consts.hdd_blk:
                     # case 1.2
                     self.case12 += 1
@@ -136,6 +142,8 @@ class Cache:
                     # case 1.3
                     self.case13 += 1
                     self.hit_cnt += 1
+                    blk.accesses += 1
+                    blk.last_access_time = time()
                     del self.SPQ[i]
                     self.WCQ.insert(0, blk)
                     self.SPQ_lck.release()
@@ -189,22 +197,22 @@ class Cache:
         for i in range(len(self.SPQ)):
             if self.SPQ[i - d].idle_time > self.qt:
                 del self.SPQ[i - d]
+                print("deleted from SPQ")
                 self.ssd_blk_cnt -= 1
                 d += 1
 
         candidates_need_total = conf.ssdCapacity - self.ssd_blk_cnt
+
+        candidates = [(i, e.popularity) for i, e in enumerate(self.WCQ) if e.typ != Consts.ssd_blk]
+        candidates.sort(key=lambda q: q[1], reverse=True)
+        found = min(candidates_need_total, len(candidates))
+        for i in range(found):
+            idx, _ = candidates[i]
+            self.write_cnt += 1
+            self.ssd_blk_cnt += 1
+            self.WCQ[idx].typ = Consts.ssd_blk
+
         candidates_capacity = self.WCQ_max_size - self.ssd_blk_cnt + len(self.SPQ)  # available in RAM or SSD
-
-        found = 0
-        for blk in self.WCQ:
-            if found == candidates_need_total:
-                break
-
-            if blk.typ != Consts.ssd_blk and blk.accesses > self.promotion_tsh:
-                found += 1
-                self.write_cnt += 1
-                self.ssd_blk_cnt += 1
-                blk.typ = Consts.ssd_blk
 
         # fixme now minimum is ram + ssd candidates need
 

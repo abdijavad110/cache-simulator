@@ -70,11 +70,11 @@ if __name__ == "__main__":
             manager.cache.case2))
 
             print("cache:: hits:", hits, " ram hits:", ram_hits, " misses:", misses, " writes:", writes,
-                  ' hit ratio: %.4f' % ((hits + ram_hits) / ttt * 100), ' WE: %.4f' % (hits / tt), " RE:",
+                  ' hit ratio: %.4f' % ((hits + ram_hits) / ttt * 100), ' WE: %.4f' % ((hits + ram_hits) / tt), " RE:",
                   manager.cache.ram_write_evict_cnt, ' SE:', manager.cache.ssd_write_evict_cnt)
     except KeyboardInterrupt:
         pass
 
     print("\ntrace:\t", parser.currentRequest, "/", parser.cnt, "\nfinal result:\nhits: ", hits, "\nram hits:",
           ram_hits, "\nmisses: ", misses, "\nwrites: ", writes,
-          "\nhit ratio: ", (hits + ram_hits) / ttt * 100, " WE:", hits / tt)
+          "\nhit ratio: ", (hits + ram_hits) / ttt * 100, " WE:", (hits + ram_hits) / tt)
