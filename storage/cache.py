@@ -10,10 +10,19 @@ class CacheElem:
         self.idle_time = idle_time
         self.accesses = 0
         self.last_access_time = 0
+        self.mean_interval = 0
+        self.accessed()
 
-    @property
-    def popularity(self):
-        return self.accesses / time()-self.last_access_time
+    def accessed(self):
+        if self.accesses == 0:
+            pass
+        elif self.mean_interval == 0:
+            self.mean_interval = time() - self.last_access_time
+        else:
+            self.mean_interval = self.mean_interval * (1 - conf.freqAlpha) + (
+                        time() - self.last_access_time) * conf.freqAlpha
+        self.last_access_time = time()
+        self.accesses += 1
 
 
 class Consts:
@@ -43,7 +52,7 @@ class Cache:
         self.ram_write_evict_cnt = 0
         self.ssd_write_evict_cnt = 0
         self.thread = None
-        # fixme fix qt update
+        # todo check dynamic QT
         self.qt = (((conf.ssdCapacity + conf.ramCapacity) / conf.storageCapacity) ** 0.5) * conf.storageCapacity
         self.promotion_tsh = conf.promotionTsh
         self.WCQ_max_size = conf.ssdCapacity + conf.ramCapacity
@@ -102,14 +111,13 @@ class Cache:
 
         else:
             # case 1
-            # todo use presence to accelerate search
+            # todo use presence hash table to accelerate search
             # search WCQ
             self.WCQ_lck.acquire()
             try:
                 idx = [blk.addr for blk in self.WCQ].index(addr)
                 blk = self.WCQ[idx]
-                blk.accesses += 1
-                blk.last_access_time = time()
+                blk.accessed()
                 if blk.typ == Consts.hdd_blk:
                     # case 1.2
                     self.case12 += 1
@@ -142,8 +150,7 @@ class Cache:
                     # case 1.3
                     self.case13 += 1
                     self.hit_cnt += 1
-                    blk.accesses += 1
-                    blk.last_access_time = time()
+                    blk.accessed()
                     del self.SPQ[i]
                     self.WCQ.insert(0, blk)
                     self.SPQ_lck.release()
@@ -203,11 +210,13 @@ class Cache:
 
         candidates_need_total = conf.ssdCapacity - self.ssd_blk_cnt
 
-        candidates = [(i, e.popularity) for i, e in enumerate(self.WCQ) if e.typ != Consts.ssd_blk]
-        candidates.sort(key=lambda q: q[1], reverse=True)
+        candidates = [(i, e) for i, e in enumerate(self.WCQ) if e.typ != Consts.ssd_blk]
+        candidates.sort(key=lambda q: q[1].mean_interval)
         found = min(candidates_need_total, len(candidates))
         for i in range(found):
-            idx, _ = candidates[i]
+            idx, blk = candidates[i]
+            if blk.accesses < self.promotion_tsh:
+                continue
             self.write_cnt += 1
             self.ssd_blk_cnt += 1
             self.WCQ[idx].typ = Consts.ssd_blk
