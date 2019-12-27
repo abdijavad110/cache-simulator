@@ -11,10 +11,11 @@
   "blkSize": 4096,
   "minReqLen": 512,
   "ssdCapacity": 25600,
-  "ramCapacity": 1024,
+  "ramCapacity": 2048,
   "storageCapacity": 131072000,
   "maxAddr": 72831761920,
   "delayFactor": 0.00000000002,
   "ssdUpdateInterval": 50000,
-  "promotionTsh": 7
+  "promotionTsh": 8,
+  "freqAlpha": 0.25
 }
