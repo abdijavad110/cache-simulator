@@ -1,14 +1,17 @@
 import threading
 from conf import conf
-from storage.storageManager import Storage
 
 
 class CacheElem:
-    def __init__(self, addr, typ, idle_time=0):
+    def __init__(self, addr, typ, length, idle_time=0):
         self.addr = addr
         self.typ = typ
+        self.len = length
         self.idle_time = idle_time
         self.accesses = 0
+
+    def aged(self):
+        self.idle_time += 1
 
 
 class Consts:
@@ -38,7 +41,7 @@ class Cache:
         self.ram_write_evict_cnt = 0
         self.ssd_write_evict_cnt = 0
         self.thread = None
-        # fixme fix qt update
+        # todo make qt update dynamic
         self.qt = (((conf.ssdCapacity + conf.ramCapacity) / conf.storageCapacity) ** 0.5) * conf.storageCapacity
         self.promotion_tsh = conf.promotionTsh
         self.WCQ_max_size = conf.ssdCapacity + conf.ramCapacity
@@ -74,6 +77,7 @@ class Cache:
                 idx = [blk.addr for blk in self.WCQ].index(addr)
                 blk = self.WCQ[idx]
                 del self.WCQ[idx]
+                # fixme invalidate a ram or ssd blocks
 
                 if blk.typ == Consts.ram_blk:
                     self.ram_write_evict_cnt += 1
@@ -90,10 +94,12 @@ class Cache:
             for i, blk in enumerate(self.SPQ):
                 if blk.addr == addr:
                     del self.SPQ[i]
+                    # fixme invalidate ssd block
                     self.ssd_write_evict_cnt += 1
                     self.SPQ_lck.release()
                     return True
             self.SPQ_lck.release()
+            # fixme write to hdd --non-blocking
 
         else:
             # case 1
@@ -114,6 +120,7 @@ class Cache:
                     self.WCQ.insert(0, blk)
                     self.WCQ_lck.release()
                     self._ram_replace()
+                    # fixme move hdd blk to ram
                 else:
                     # case 1.1
                     self.case11 += 1
@@ -125,6 +132,7 @@ class Cache:
                     del self.WCQ[idx]
                     self.WCQ.insert(0, blk)
                     self.WCQ_lck.release()
+                # fixme read blk from blk.type
                 return True
             except ValueError:
                 self.WCQ_lck.release()
@@ -140,18 +148,21 @@ class Cache:
                     self.WCQ.insert(0, blk)
                     self.SPQ_lck.release()
                     self.wcq_evict()
+                    # fixme read blk from SSD
                     return True
             self.SPQ_lck.release()
 
             # case 1.4
             self.case14 += 1
             self.miss_cnt += 1
-            new_blk = CacheElem(addr, Consts.ram_blk)
+            new_blk = CacheElem(addr, Consts.ram_blk, length)
             self.ram_blk_cnt += 1
             self.WCQ_lck.acquire()
             self.WCQ.insert(0, new_blk)
             self.WCQ_lck.release()
             self._ram_replace()
+            # fixme move hdd blk to a ram blk
+            # fixme read blk from hdd or ram
             self.wcq_evict()
 
     def wcq_evict(self):
@@ -160,11 +171,13 @@ class Cache:
             y = self.WCQ.pop()
 
             self.SPQ_lck.acquire()
-            for blk in self.SPQ:
-                blk.idle_time += 1
+            map(lambda q: q.aged(), self.SPQ)
             if y.typ == Consts.ssd_blk:
                 y.idle_time = len(self.WCQ)
                 self.SPQ.insert(0, y)
+            elif y.typ == Consts.ram_blk:
+                # fixme invalidate ram blk
+                pass
             self.SPQ_lck.release()
         self.WCQ_lck.release()
 
@@ -174,6 +187,7 @@ class Cache:
             if self.ram_blk_cnt <= conf.ramCapacity:
                 break
             if blk.typ == Consts.ram_blk:
+                # fixme invalidate ram blk
                 blk.typ = Consts.hdd_blk
                 self.ram_blk_cnt -= 1
                 break
@@ -190,6 +204,7 @@ class Cache:
             if self.SPQ[i - d].idle_time > self.qt:
                 del self.SPQ[i - d]
                 self.ssd_blk_cnt -= 1
+                # fixme invalidate ssd blk
                 d += 1
 
         candidates_need_total = conf.ssdCapacity - self.ssd_blk_cnt
@@ -205,8 +220,9 @@ class Cache:
                 self.write_cnt += 1
                 self.ssd_blk_cnt += 1
                 blk.typ = Consts.ssd_blk
+                # fixme move blk to ssd and invalidate ram if ram blk
 
-        # fixme now minimum is ram + ssd candidates need
+        # QQ now minimum is ram + ssd candidates need. ok?
 
         # ff.write("avai %d need %d ram %d rbc %d/%d sbc %d ==> " % (
         #     candidates_capacity, candidates_need_total, conf.ramCapacity, self.ram_blk_cnt, conf.ramCapacity,
@@ -214,7 +230,6 @@ class Cache:
 
         diff = candidates_capacity - candidates_need_total
         if diff < 0:
-            # fixme make WCQ size dynamic
             self.WCQ_max_size -= diff
 
             # ff.write("I %d\n" % diff)
@@ -232,12 +247,12 @@ class Cache:
 
         # ff.write("D %d\n" % len(evicted))
 
-        # fixme make WCQ size dynamic
         self.WCQ_max_size -= len(evicted)
         for e in evicted:
             if len(self.WCQ) <= self.WCQ_max_size:
                 break
             self.WCQ.remove(e)
+            # fixme if e is ram blk then invalidate it.
 
         self.WCQ_lck.release()
         self.SPQ_lck.release()
