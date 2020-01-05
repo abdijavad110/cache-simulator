@@ -64,7 +64,7 @@ if __name__ == "__main__":
                 print(u'\u2591', end='')
 
             now = parser.currentRequest - len(req_Q)
-            print('  (%.2f req/s)' % (now - last) / (time() - last_t))
+            print('  (%.2f req/s)' % ((now - last) / (time() - last_t)))
             last_t = time()
             last = now
 

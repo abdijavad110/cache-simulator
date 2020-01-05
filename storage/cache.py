@@ -85,7 +85,7 @@ class Cache:
                         self.miss_cnt += 1
                     del self.WCQ[idx]
                 else:
-                    if blk.accesses > 5 and blk.writes / blk.reads < 0.1:
+                    if blk.accesses > 5 and blk.writes / blk.reads < 10:
                         blk.writes += 1
                         self.write_cnt += 1
                         self.hit_cnt += 1
